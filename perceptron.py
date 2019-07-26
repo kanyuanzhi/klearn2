@@ -2,6 +2,7 @@ from klearn import Klearn
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import numpy as np
+
 np.seterr(divide='ignore', invalid='ignore')
 
 
@@ -49,7 +50,7 @@ class Perceptron(Klearn):
                 print(count)
                 print(self.lossFunction())
             for i in range(self.x.shape[0]):
-                delta = self.y[i] * (np.sum(self.a * self.y.reshape(-1,1) * gram_matrix[:, i].reshape(-1,1)) + self.b)
+                delta = self.y[i] * (np.sum(self.a * self.y.reshape(-1, 1) * gram_matrix[:, i].reshape(-1, 1)) + self.b)
 
                 # for xi, yi in zip(self.x,self.y):
                 #     delta = yi*(np.sum(self.a * self.y * gram_matrix[:,self.x.argwhere(q==xi)])+self.b)
@@ -93,4 +94,3 @@ class Perceptron(Klearn):
                 index, (-self.b - self.w[0][0] * index) / self.w[1][0])
         plt.legend()
         plt.show()
-

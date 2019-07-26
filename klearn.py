@@ -13,5 +13,5 @@ class Klearn(object):
     def train(self):
         pass
 
-    def draw(self):
+    def draw(self, *args):
         pass
