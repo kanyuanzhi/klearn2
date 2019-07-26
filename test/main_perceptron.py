@@ -12,14 +12,11 @@ if __name__ == "__main__":
     # print(y)
 
     # perceptron = Perceptron(x,y,mode="verbose")
-    perceptron = Perceptron(x,y)
-    w,b = perceptron.train()
-    print(w,b)
+    perceptron = Perceptron(x, y)
+    w, b = perceptron.train()
+    print(w, b)
 
-    perceptron2 = Perceptron(x,y,1,20000)
-    w,b = perceptron2.trainDual()
-    print(perceptron2.a)
-    print(w,b)
+    perceptron2 = Perceptron(x, y)
+    w, b = perceptron2.trainDual()
+    print(w, b)
     perceptron2.draw()
-    
-
