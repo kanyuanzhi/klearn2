@@ -9,20 +9,30 @@ np.seterr(divide='ignore', invalid='ignore')
 class KNN(Klearn):
     def __init__(self, x, y, *args, **kwargs):
         super().__init__(x, y, *args, **kwargs)
-        if 'k' in kwargs:
-            self.k = kwargs['k']
-        else:
-            self.k = 5
         self.dimensions = x.shape[1]  # 数据维度
         self.kdtree = KDTree(x, y)
-        self.target = None
-        self.candidate_nodes = None
+        self.k = 0
+        self.target = None  # 待分类点
+        self.candidate_nodes = None  # 与待分类点最近的k个点的集合
 
-    def classify(self, target):
+    def classify(self, target, k=3, **kwargs):
+        self.k = k
         self.target = target
         self.candidate_nodes = KNN.CandidateNodes(self.k, target)
         self.search(self.kdtree.root)
-        return [node.origin_index for node in self.candidate_nodes.nodes]
+        candidate_tags = {}
+        for node in self.candidate_nodes.nodes:
+            if node.tag in candidate_tags:
+                candidate_tags[str(node.tag)] += 1.0
+            else:
+                candidate_tags[str(node.tag)] = 1.0
+        candidate_tags_sorted = sorted(candidate_tags.items(), key=lambda d: d[1], reverse=True)
+        if "mode" in kwargs:
+            if kwargs["mode"] == "verbose":
+                for item in candidate_tags_sorted:
+                    print(item[0], str(round(item[1] / self.k * 100, 2)) + "%")
+        return candidate_tags_sorted[0][0]
+        # return [node.origin_index for node in self.candidate_nodes.nodes]
 
     def search(self, current):
         current = self.find_leaf(current)
@@ -42,7 +52,7 @@ class KNN(Klearn):
                     current = current.parent
                 else:
                     perpendicular_distance = abs(
-                        self.target[current.parent.dimension] - current.data[current.parent.dimension])  # 垂直距离
+                        self.target[current.parent.dimension] - current.parent.data[current.parent.dimension])  # 垂直距离
                     if perpendicular_distance < max(self.candidate_nodes.distances):
                         if current == current.parent.left:
                             current = current.parent.right
@@ -64,12 +74,17 @@ class KNN(Klearn):
         return s ** 0.5
 
     def find_leaf(self, current):
-        print(current.origin_index)
+        # print(current.origin_index)
         while current.left or current.right:
-            if self.target[current.dimension] <= current.data[current.dimension]:
+            if not current.left:
+                current = current.right
+            elif not current.right:
                 current = current.left
             else:
-                current = current.right
+                if self.target[current.dimension] < current.data[current.dimension]:
+                    current = current.left
+                else:
+                    current = current.right
         return current
 
     def treeDisplay(self, size=(25, 20)):
@@ -114,7 +129,7 @@ class KDTree(object):
         uniques = np.unique(data)  # 去重
         size = len(uniques)
         if size % 2 == 0:  # 判断列表长度为偶数
-            median = uniques[size // 2]
+            median = uniques[size // 2 - 1]  # 取中间左侧一位作中位数
         else:  # 判断列表长度为奇数
             median = uniques[(size - 1) // 2]
         return median
@@ -138,16 +153,16 @@ class KDTree(object):
             right_x = x[index + 1:len(x)]
             left_y = y[0:index]
             right_y = y[index + 1:len(y)]
-            left_ori = origin_index_list[0:index]
-            right_ori = origin_index_list[index + 1:len(y)]
+            left_oil = origin_index_list[0:index]
+            right_oil = origin_index_list[index + 1:len(y)]
             if len(left_x) > 0:
-                left = self.create(np.array(left_x), left_y, left_ori, (d + 1) % self.dimensions)
+                left = self.create(np.array(left_x), left_y, left_oil, (d + 1) % self.dimensions)
                 current.left = left
                 current.children_count += 1
                 left.parent = current
 
             if len(right_x) > 0:
-                right = self.create(np.array(right_x), right_y, right_ori, (d + 1) % self.dimensions)
+                right = self.create(np.array(right_x), right_y, right_oil, (d + 1) % self.dimensions)
                 current.right = right
                 current.children_count += 1
                 right.parent = current
