@@ -1,7 +1,7 @@
 from klearn import Klearn
 import matplotlib.pyplot as plt
-import numpy as np
 import networkx as nx
+import numpy as np
 
 np.seterr(divide='ignore', invalid='ignore')
 
@@ -13,11 +13,92 @@ class KNN(Klearn):
             self.k = kwargs['k']
         else:
             self.k = 5
-
+        self.dimensions = x.shape[1]  # 数据维度
         self.kdtree = KDTree(x, y)
+        self.target = None
+        self.candidate_nodes = None
 
-    def draw(self):
-        draw(self.kdtree.root)
+    def classify(self, target):
+        self.target = target
+        self.candidate_nodes = KNN.CandidateNodes(self.k, target)
+        self.search(self.kdtree.root)
+        return [node.origin_index for node in self.candidate_nodes.nodes]
+
+    def search(self, current):
+        current = self.find_leaf(current)
+        self.candidate_nodes.append(current)
+        # while current.parent:
+        #     current = current.parent
+        #     if not current.not_visited:
+        #         current
+        while current.parent:
+            # 有父节点
+            if current.parent.not_visited:
+                # 没被访问过
+                # current = current.parent
+                self.candidate_nodes.append(current.parent)
+                if current.parent.children_count == 1:
+                    # current是current.parent的唯一子节点
+                    current = current.parent
+                else:
+                    perpendicular_distance = abs(
+                        self.target[current.parent.dimension] - current.data[current.parent.dimension])  # 垂直距离
+                    if perpendicular_distance < max(self.candidate_nodes.distances):
+                        if current == current.parent.left:
+                            current = current.parent.right
+                            self.search(current)
+                        else:
+                            current = current.parent.left
+                            self.search(current)
+                    else:
+                        current = current.parent
+            else:
+                # 被访问过
+                current = current.parent
+
+    @staticmethod
+    def distance(target, current):
+        s = 0.0
+        for i in range(len(target)):
+            s += (target[i] - current.data[i]) ** 2
+        return s ** 0.5
+
+    def find_leaf(self, current):
+        print(current.origin_index)
+        while current.left or current.right:
+            if self.target[current.dimension] <= current.data[current.dimension]:
+                current = current.left
+            else:
+                current = current.right
+        return current
+
+    def treeDisplay(self, size=(25, 20)):
+        draw(self.kdtree.root, size)
+
+    class CandidateNodes(object):
+        def __init__(self, k, target):
+            self.k = k
+            self.target = target
+            self.nodes = []
+            self.distances = []
+            self.size = 0
+
+        def append(self, node):
+            if self.size < self.k:
+                self.nodes.append(node)
+                distance = KNN.distance(self.target, node)
+                self.distances.append(distance)
+                self.size += 1
+            else:
+                distance = KNN.distance(self.target, node)
+                max_distance = max(self.distances)
+                if distance < max_distance:
+                    index = self.distances.index(max_distance)
+                    self.nodes.pop(index)
+                    self.distances.pop(index)
+                    self.nodes.append(node)
+                    self.distances.append(distance)
+            node.not_visited = False
 
 
 class KDTree(object):
@@ -51,7 +132,7 @@ class KDTree(object):
             median = self.getMedian(target_x)
             index = np.where(target_x == median)[0][0]
 
-            current_node = KDNode(x[index], y[index], origin_index_list[index], d)
+            current = KDNode(x[index], y[index], origin_index_list[index], d)
 
             left_x = x[0:index]
             right_x = x[index + 1:len(x)]
@@ -60,33 +141,35 @@ class KDTree(object):
             left_ori = origin_index_list[0:index]
             right_ori = origin_index_list[index + 1:len(y)]
             if len(left_x) > 0:
-                left_node = self.create(np.array(left_x), left_y, left_ori, (d + 1) % self.dimensions)
-                current_node.left_node = left_node
-                left_node.parent = current_node
+                left = self.create(np.array(left_x), left_y, left_ori, (d + 1) % self.dimensions)
+                current.left = left
+                current.children_count += 1
+                left.parent = current
 
             if len(right_x) > 0:
-                right_node = self.create(np.array(right_x), right_y, right_ori, (d + 1) % self.dimensions)
-                current_node.right_node = right_node
-                right_node.parent = current_node
+                right = self.create(np.array(right_x), right_y, right_ori, (d + 1) % self.dimensions)
+                current.right = right
+                current.children_count += 1
+                right.parent = current
 
-            return current_node
+            return current
 
-    def draw(self):
-        draw(self.root)
+    def draw(self, size=(25, 20)):
+        draw(self.root, size)
 
 
 def createGraph(G, node, pos={}, x=0, y=0, layer=1):
     pos[node.origin_index] = (x, y)
-    if node.left_node:
-        G.add_edge(node.origin_index, node.left_node.origin_index)
+    if node.left:
+        G.add_edge(node.origin_index, node.left.origin_index)
         l_x, l_y = x - 1 / 2 ** layer, y - 1
         l_layer = layer + 1
-        createGraph(G, node.left_node, x=l_x, y=l_y, pos=pos, layer=l_layer)
-    if node.right_node:
-        G.add_edge(node.origin_index, node.right_node.origin_index)
+        createGraph(G, node.left, x=l_x, y=l_y, pos=pos, layer=l_layer)
+    if node.right:
+        G.add_edge(node.origin_index, node.right.origin_index)
         r_x, r_y = x + 1 / 2 ** layer, y - 1
         r_layer = layer + 1
-        createGraph(G, node.right_node, x=r_x, y=r_y, pos=pos, layer=r_layer)
+        createGraph(G, node.right, x=r_x, y=r_y, pos=pos, layer=r_layer)
     return G, pos
 
 
@@ -106,5 +189,7 @@ class KDNode(object):
         self.origin_index = origin_index[0]  # 在原始数据列中的索引
         self.dimension = d  # 维度
         self.parent = None
-        self.left_node = None
-        self.right_node = None
+        self.children_count = 0
+        self.left = None
+        self.right = None
+        self.not_visited = True

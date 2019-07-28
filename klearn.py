@@ -10,7 +10,7 @@ class Klearn(object):
     def printX(self):
         print(self.x)
     
-    def train(self):
+    def train(self, *args):
         pass
 
     def draw(self, *args):
