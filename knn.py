@@ -37,10 +37,7 @@ class KNN(Klearn):
     def search(self, current):
         current = self.find_leaf(current)
         self.candidate_nodes.append(current)
-        # while current.parent:
-        #     current = current.parent
-        #     if not current.not_visited:
-        #         current
+
         while current.parent:
             # 有父节点
             if current.parent.not_visited:
@@ -54,6 +51,7 @@ class KNN(Klearn):
                     perpendicular_distance = abs(
                         self.target[current.parent.dimension] - current.parent.data[current.parent.dimension])  # 垂直距离
                     if perpendicular_distance < max(self.candidate_nodes.distances):
+                        # 若垂直距离小于候选节点中的最大距离，则需进入父节点的另一个子节点寻找
                         if current == current.parent.left:
                             current = current.parent.right
                             self.search(current)
