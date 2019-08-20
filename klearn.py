@@ -9,9 +9,15 @@ class Klearn(object):
 
     def printX(self):
         print(self.x)
-    
-    def train(self, *args):
+
+    def fit(self, *args):
+        # 训练
+        pass
+
+    def predict(self, *args):
+        # 预测
         pass
 
     def draw(self, *args):
+        # 绘图
         pass

@@ -18,7 +18,7 @@ class Perceptron(Klearn):
         self.a_list = [self.a]
         self.b_list = [self.b]
 
-    def train(self):
+    def fit(self):
         count = 0
         while count <= self.epoch:
             error = False
@@ -40,7 +40,7 @@ class Perceptron(Klearn):
                 break
         return self.w, self.b
 
-    def trainDual(self):
+    def fitDual(self):
         gram_matrix = np.dot(self.x, self.x.T)
         count = 0
         while count <= self.epoch:

@@ -10,12 +10,15 @@ class KNN(Klearn):
     def __init__(self, x, y, *args, **kwargs):
         super().__init__(x, y, *args, **kwargs)
         self.dimensions = x.shape[1]  # 数据维度
-        self.kdtree = KDTree(x, y)
+        self.kdtree = None
         self.k = 0
         self.target = None  # 待分类点
         self.candidate_nodes = None  # 与待分类点最近的k个点的集合
 
-    def classify(self, target, k=3, **kwargs):
+    def fit(self):
+        self.kdtree = KDTree(self.x, self.y)
+
+    def predict(self, target, k=3, **kwargs):
         self.k = k
         self.target = target
         self.candidate_nodes = KNN.CandidateNodes(self.k, target)

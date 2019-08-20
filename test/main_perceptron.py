@@ -13,10 +13,10 @@ if __name__ == "__main__":
 
     # perceptron = Perceptron(x,y,mode="verbose")
     perceptron = Perceptron(x, y)
-    w, b = perceptron.train()
+    w, b = perceptron.fit()
     print(w, b)
 
     perceptron2 = Perceptron(x, y)
-    w, b = perceptron2.trainDual()
+    w, b = perceptron2.fitDual()
     print(w, b)
     perceptron2.draw()

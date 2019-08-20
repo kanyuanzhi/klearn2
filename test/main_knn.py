@@ -21,7 +21,8 @@ if __name__ == "__main__":
     knn = KNN(x, y)
     # knn.treeDisplay((50, 20))
 
-    result = knn.classify(test, 60, mode="verbose")
+    knn.fit()
+    result = knn.predict(test, 60, mode="verbose")
     print(result)
 
     # knn.treeDisplay((10, 10))
